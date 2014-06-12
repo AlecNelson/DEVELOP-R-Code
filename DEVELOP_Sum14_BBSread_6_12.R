@@ -6,8 +6,6 @@
 #If you don't have all these installed, uncomment and use:
 # install.packages(c("date", "scales", "plyr", "raster", "rgdal", "rJava", "maptools","sp","zoo","gtools"))
 
-library(date)
-library(scales)
 library(plyr)
 library(raster)
 library(rgdal)
