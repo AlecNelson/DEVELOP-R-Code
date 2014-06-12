@@ -54,7 +54,6 @@ MNS.1<-(MNS.1[MNS.1$Year>1995 & MNS.1$Year<2013,])
 MNS.2<-(MNS.2[MNS.2$Aou==5580,])
 MNS.1<-(MNS.1[MNS.1$Aou==5580,])
 
-
 str(Maine)
 summary(MNS.1)
 unique(Maine$Year)
