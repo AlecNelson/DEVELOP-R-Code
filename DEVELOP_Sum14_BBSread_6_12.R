@@ -497,4 +497,65 @@ RoutebyRoute<-function(stops,Title){
 
 #RoutebyRoute(stops,"Routes (full year-to-year coverage)")
 
+#################################
 
+setwd("C:/Users/ahnelson/Desktop")
+
+StopData<-read.csv(file="Birds_BCR14_bystop.csv",header = TRUE,sep = ",")
+
+str(StopData)
+summary(StopData)
+
+#Create unique RouteID variable
+StopData$RouteID<-(StopData$Country*100000)+(StopData$State*1000)+StopData$Route
+
+#Set species of interest with Aou numbers
+StopData.WTSP<-(StopData[StopData$Aou== 5580,])
+StopData.WTSP<-(StopData[StopData$Country== 840,])
+
+
+#Subset to one Route
+StopData.WTSP.i<-(StopData.WTSP[StopData.WTSP$RouteID== 84044129,])
+
+unique(StopData.WTSP$RouteID)
+
+#Subset by each RouteID and turn into vectors to calculate histogram
+#Use for loops to create vectors for each collection of data by Route
+
+for(i in 1:length(unique(StopData.WTSP$RouteID))){
+  Route.i<-unique(StopData.WTSP$RouteID)[i]
+  StopData.WTSP.i<-(StopData.WTSP[StopData.WTSP$RouteID== Route.i,])
+  for(j in 6:55){
+    vector.i<-StopData.WTSP.i[,j]
+    vector.i<-vector.i[vector.i!=0]
+    if(j<7){
+      Hist.WTSP.ij<-vector.i
+    } else{
+      Hist.WTSP.ij<-c(Hist.WTSP.ij,vector.i)
+    }
+  }
+  print(Route.i)
+  print(Hist.WTSP.ij)
+  #Save as seperate vectors or add to a dataframe
+  if(i<2){
+    Routes.ij<-rep(Route.i,length(Hist.WTSP.ij))
+    Hist.WTSP<-cbind(Routes.ij,Hist.WTSP.ij)
+  }else{
+    Routes.ij<-rep(Route.i,length(Hist.WTSP.ij))
+    Add.Hist<-cbind(Routes.ij,Hist.WTSP.ij)
+    Hist.WTSP<-rbind(Hist.WTSP,Add.Hist)
+  }
+  
+}
+
+Hist.WTSP<-as.data.frame(Hist.WTSP)
+str(Hist.WTSP)
+summary(Hist.WTSP)
+
+p <- ggplot(Hist.WTSP, aes(x=Hist.WTSP.ij))
+p <- p + geom_histogram(binwidth=1,colour="black", fill="white")
+p <- p + facet_wrap(~ Routes.ij,ncol=10)  #, scale="free_y")
+p <- p + theme_bw() + xlab("Count")
+theme(axis.text.x  = element_text(angle=45,hjust = 1,vjust = 1)) + theme(panel.grid.major = element_line(colour = "black", size = 1.5))
+p <- p + ggtitle("Route Counts in the US (Country Code 840)") + theme(plot.title = element_text(lineheight=.8, face="bold"))
+print(p)
