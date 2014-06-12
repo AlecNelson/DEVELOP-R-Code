@@ -20,7 +20,6 @@ library(ggplot2)
 
 #####################################################################
 #load BBS data
-
 setwd("C:/Users/ahnelson/Desktop/BCR14_BBS_Data")
 
 Maine<-read.csv(file="Maine.csv",header = TRUE,sep = ",")
