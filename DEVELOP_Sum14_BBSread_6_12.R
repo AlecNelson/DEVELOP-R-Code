@@ -553,7 +553,7 @@ str(Hist.WTSP)
 summary(Hist.WTSP)
 
 p <- ggplot(Hist.WTSP, aes(x=Hist.WTSP.ij))
-p <- p + geom_histogram(binwidth=1,colour="black", fill="white")
+p <- p + geom_histogram(binwidth=1,color="black", fill="white")
 p <- p + facet_wrap(~ Routes.ij,ncol=10)  #, scale="free_y")
 p <- p + theme_bw() + xlab("Count")
 theme(axis.text.x  = element_text(angle=45,hjust = 1,vjust = 1)) + theme(panel.grid.major = element_line(colour = "black", size = 1.5))
