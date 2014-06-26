@@ -412,29 +412,71 @@ loadCSVs<-function(bsd.dir, var.name){
 
 #Direct program to YOUR relevant directory/folder
 loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/RouteData',"routes")
-loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/StopData',"stops")
+loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/StopbyStopData',"stops")
+
+routes<-read.csv(file="Final_Routes.csv",header = TRUE,sep = ",")
 
 str(routes)
 str(stops)
+
+
+stops<-(stops[stops$Country== 840,])
 
 stops$Country<-NULL
 stops$State<-NULL
 stops$Route<-NULL
 stops$StopTotal<-NULL
 
-names(routes)[4]<-"Year"
+#names(routes)[4]<-"Year"
 
+
+unique(routes$RouteID)
+Years<-c(1999:2013)
+
+setdiff(routes$RouteID,stops[stops$Year==Years[6],]$RouteID)
 
 #Add 0,0,0,0,0 rows to Bird Data
-for(i in 1:length(unique(routes$Year))){
-  Year.i<-unique(routes$Year)[i]
+for(i in 1:length(Years)){
+  Year.i<-Years[i]
   Aou.i<-stops$Aou[1]
-  routematch<-setdiff(routes[routes$Year==Year.i,]$RouteID,stops[stops$Year==Year.i,]$RouteID)
+  routematch<-setdiff(routes$RouteID,stops[stops$Year==Years[i],]$RouteID)
   
   for(j in 1:length(routematch)){
     stops<-rbind(stops,c(routematch[j],Year.i,Aou.i,0,0,0,0,0,0))
   }
 }
+
+str(stops)
+unique(stops$RouteID)
+unique(routes$RouteID)
+
+stops.i<-stops[stops$RouteID %in% routes$RouteID,]
+
+unique(stops.i$RouteID)
+unique(routes$RouteID)
+
+
+for(i in 4:ncol(stops.i)){
+  for(j in 1:nrow(stops.i)){
+    sample.ij<-stops.i[j,i]
+    if(sample.ij==0){
+      stops.i[j,i]<-0
+    } else if(sample.ij>0){
+      stops.i[j,i]<-1 
+    } else {
+      print("Huh?")
+    }
+  }
+}
+
+summary(stops.i)
+
+
+
+
+
+
+
 
 
 setwd("C:/Users/ahnelson/Desktop/WTSP Year")
@@ -493,7 +535,6 @@ RoutebyRoute<-function(stops,Title){
   p <- p + ggtitle(Title) + theme(plot.title = element_text(lineheight=.8, face="bold"))
   print(p)
   }
-
 
 #RoutebyRoute(stops,"Routes (full year-to-year coverage)")
 
@@ -559,3 +600,86 @@ p <- p + theme_bw() + xlab("Count")
 theme(axis.text.x  = element_text(angle=45,hjust = 1,vjust = 1)) + theme(panel.grid.major = element_line(colour = "black", size = 1.5))
 p <- p + ggtitle("Route Counts in the US (Country Code 840)") + theme(plot.title = element_text(lineheight=.8, face="bold"))
 print(p)
+
+
+###############################################################
+###############################################################
+str(routes)
+summary(routes)
+routes<-routes[routes$Country!=124,]
+routes<-routes[routes$Year>1998,]
+
+unique(routes$Year)
+
+routes.i<-data.frame(Year=routes$Year,RouteID=routes$RouteID)
+
+tab.ii<-as.data.frame(table(routes.i))
+
+length(unique(tab.ii$RouteID))
+
+#Create logical steps of statements to identify valid routes and report list of routes
+Route.V<-data.frame(RouteID=unique(tab.ii$RouteID),check.1=(rep(999,length(unique(tab.ii$RouteID)))),check.2=(rep(999,length(unique(tab.ii$RouteID)))),check.3=(rep(999,length(unique(tab.ii$RouteID)))))
+
+###############################
+
+RouteCheck<-function(tab.ii,Route.V,k){
+
+year.list<-c(2001,2006,2011)
+
+check.year.i<-c(year.list[k]-1,year.list[k],year.list[k]+1)
+check.year.twice.i<-c(year.list[k]-2,year.list[k]-1,year.list[k],year.list[k]+1,year.list[k]+2)
+
+#For each route:
+for(i in 1:length(Route.V$RouteID)){
+  Route.i<-Route.V[i,1]
+  
+  tab.ii.check.ij<-tab.ii[tab.ii$RouteID==Route.i & tab.ii$Year%in%check.year.i,]
+  tab.ii.check.twice.ij<-tab.ii[tab.ii$RouteID==Route.i & tab.ii$Year%in%check.year.twice.i,]
+
+  if(sum(tab.ii.check.ij$Freq)>=1 & sum(tab.ii.check.twice.ij$Freq)>=2){
+    Route.V[i,k+1]<-1
+  } else {
+    Route.V[i,k+1]<-0
+  }
+}
+
+assign("Route.V",Route.V, envir = .GlobalEnv)
+}
+######################
+
+RouteCheck(tab.ii,Route.V,1)
+RouteCheck(tab.ii,Route.V,2)
+RouteCheck(tab.ii,Route.V,3)
+
+head(Route.V)
+
+#Check that there are at least 2 hits in the 3 periods:
+for(i in 1:length(Route.V$RouteID)){
+  Route.i<-as.character(Route.V$RouteID[i])
+  Route.i<-as.integer(Route.i)
+  twice.check<-sum(Route.V[i,2:4])
+  
+  if(twice.check>=2){
+    #print("Check!")
+    
+    if(i==1){
+      Final.Routes<-(Route.i)
+    } else {
+      Final.Routes<-c(Final.Routes,Route.i)
+    }
+  } else {
+    #print("Nope!")
+  }
+}
+
+Final.Routes<-data.frame(RouteID=Final.Routes)
+
+length(Final.Routes[,1])
+
+write.csv(Final.Routes, file = "Final_Routes.csv")
+
+
+
+
+
+
