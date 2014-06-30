@@ -411,7 +411,6 @@ loadCSVs<-function(bsd.dir, var.name){
 }
 
 #Direct program to YOUR relevant directory/folder
-loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/RouteData',"routes")
 loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/StopbyStopData',"stops")
 
 routes<-read.csv(file="Final_Routes.csv",header = TRUE,sep = ",")
@@ -433,7 +432,7 @@ stops$StopTotal<-NULL
 unique(routes$RouteID)
 Years<-c(1999:2013)
 
-setdiff(routes$RouteID,stops[stops$Year==Years[6],]$RouteID)
+setdiff(routes$RouteID,stops[stops$Year==Years[1],]$RouteID)
 
 #Add 0,0,0,0,0 rows to Bird Data
 for(i in 1:length(Years)){
@@ -442,13 +441,15 @@ for(i in 1:length(Years)){
   routematch<-setdiff(routes$RouteID,stops[stops$Year==Years[i],]$RouteID)
   
   for(j in 1:length(routematch)){
-    stops<-rbind(stops,c(routematch[j],Year.i,Aou.i,0,0,0,0,0,0))
+    stops<-rbind(stops,c(routematch[j],Year.i,Aou.i,(rep(0,times=50))))
   }
 }
 
-str(stops)
+tail(stops)
 unique(stops$RouteID)
 unique(routes$RouteID)
+
+str(stops)
 
 stops.i<-stops[stops$RouteID %in% routes$RouteID,]
 
@@ -470,17 +471,79 @@ for(i in 4:ncol(stops.i)){
 }
 
 summary(stops.i)
+routes_year<-read.csv(file="RouteYear.csv",header = TRUE,sep = ",")
+str(routes_year)
+
+routes_year_1<-data.frame(RouteID=routes_year$RouteID,Year1999=routes_year$Year1999,Year2000=routes_year$Year2000,
+                          Year2001=routes_year$Year2001,Year2002=routes_year$Year2002,Year2003=routes_year$Year2003,
+                          Run1=routes_year$Run1)
+
+routes_year_2<-data.frame(RouteID=routes_year$RouteID,Year2004=routes_year$Year2004,Year2005=routes_year$Year2005,
+                          Year2006=routes_year$Year2006,Year2007=routes_year$Year2007,Year2008=routes_year$Year2008,
+                          Run2=routes_year$Run2)
+
+routes_year_3<-data.frame(RouteID=routes_year$RouteID,Year2009=routes_year$Year2009,Year2010=routes_year$Year2010,
+                          Year2011=routes_year$Year2011,Year2012=routes_year$Year2012,Year2013=routes_year$Year2013,
+                          Run3=routes_year$Run3)
+
+
+YearWrite<-function(stops.i,routes_year,Year.i,year_pos){
+  stops.year.i<-stops.i[stops.i$Year==Year.i,]
+  routes.i<-unique(stops.year.i$RouteID)
+  
+  for(i in 1:length(routes.i)){
+    stops.test<-stops.year.i[stops.year.i$RouteID==(routes.i[i]),]
+    routes.test<-routes_year[routes_year$RouteID==(routes.i[i]),]
+    
+    if(routes.test[1+year_pos]==0 | routes.test[7]==0){
+      print("Applying NA's")
+      stops.test[4:length(stops.test)]<-NA
+    } else {
+      print("All Clear")
+    }
+    
+    df.i<-stops.test
+    
+    if ( i == 1){
+      df.out <- df.i
+    } else {
+      df.out <- rbind(df.out, df.i)
+    }
+  }
+  
+  print(as.character(paste(c("Writing", Year.i,"file"), collapse=" ")))
+  
+  write.csv(df.out, paste(c("WTSP_StopComplete_", Year.i,".csv"), collapse=""), row.names = FALSE)
+}
+
+YearWrite(stops.i,routes_year_1,1999,1)
+YearWrite(stops.i,routes_year_1,2000,2)
+YearWrite(stops.i,routes_year_1,2001,3)
+YearWrite(stops.i,routes_year_1,2002,4)
+YearWrite(stops.i,routes_year_1,2003,5)
+
+YearWrite(stops.i,routes_year_2,2004,1)
+YearWrite(stops.i,routes_year_2,2005,2)
+YearWrite(stops.i,routes_year_2,2006,3)
+YearWrite(stops.i,routes_year_2,2007,4)
+YearWrite(stops.i,routes_year_2,2008,5)
+
+YearWrite(stops.i,routes_year_3,2009,1)
+YearWrite(stops.i,routes_year_3,2010,2)
+YearWrite(stops.i,routes_year_3,2011,3)
+YearWrite(stops.i,routes_year_3,2012,4)
+YearWrite(stops.i,routes_year_3,2013,5)
 
 
 
 
-
-
+write.csv(stops[stops$Year==Year.i,], paste(c("WTSP_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
 
 
 
 setwd("C:/Users/ahnelson/Desktop/WTSP Year")
-#write.csv(stops, "WTSP_stopsEDIT_Null.csv", row.names = FALSE)
+write.csv(stops, "WTSP_stopsEDIT_Null.csv", row.names = FALSE)
+
 
 # for(i in 1:length(unique(stops$Year))){
 #   Year.i<-unique(stops$Year)[i]
