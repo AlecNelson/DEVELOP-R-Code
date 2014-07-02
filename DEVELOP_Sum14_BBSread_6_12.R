@@ -741,8 +741,141 @@ length(Final.Routes[,1])
 
 write.csv(Final.Routes, file = "Final_Routes.csv")
 
+################################################################################
+################################################################################
+# Run a Majority calc for each stop based on the period of interest and focal year
+  # Output format should be the same as complete df, with 0, 1, or NA
+  # Apply majority and focal-based logic to deciding resulting value
 
 
+setwd("C:/Users/ahnelson/Desktop/WTSP_StopComplete")
+
+#Use "for" function to join the data into one data set:
+# Use state abbreviations to keep track of data
+# Create State variable
+loadCSVs<-function(bsd.dir, var.name){
+  files <- dir(bsd.dir)
+  for ( i in 1:length(files)){
+    fn <- files[i]
+    state <- substr(fn, 1, 2)
+    df.i <- read.csv(file.path(bsd.dir, fn))
+    df.i$state <- state
+    if ( i == 1){
+      df.out <- df.i
+    } else {
+      df.out <- rbind(df.out, df.i)
+    }
+  }
+  #Eliminate state variable
+  df.out$state<-NULL
+  #Check file for accuracy
+  str(df.out)
+  #Create base dataframe that all other sections will copy from:
+  assign(var.name, df.out, envir = .GlobalEnv)
+}
+
+#Direct program to YOUR relevant directory/folder
+loadCSVs('C:/Users/ahnelson/Desktop/WTSP_StopComplete',"stops")
+
+str(stops)
+summary(stops)
+
+yearstart<-1999
+yearstop<-2003
+yearfocal<-2001
 
 
+################################################################################
 
+#LOAD FUNCTION TO RUN
+
+################################################################################
+################################################################################
+MajorityFocal<-function(stops,yearstart,yearstop,yearfocal){
+  #Create list of years
+  years<-seq(yearstart,yearstop)
+  #print("Set Years")
+  
+  #Iterate through Routes
+  for(i in 1:length(unique(stops$RouteID))){
+    Route.i<-unique(stops$RouteID)[i]
+    
+    #Subset by Route to capture all years, then by years of interest
+    stops.route.i<-(stops[stops$RouteID== Route.i,])
+    stops.route.i<-(stops.route.i[stops.route.i$Year>=yearstart & stops.route.i$Year<=yearstop,])
+    #print("Subset Route")
+    
+    #Iterate through Stops along the Routes
+    for(j in 4:ncol(stops.route.i)){
+      #print("Check Stops")
+      
+      na.count<-length((is.na(stops.route.i[,j])[is.na(stops.route.i[,j])==TRUE]))
+      
+      if(na.count==5){
+        stop.val.ij<-NA
+        
+      } else if (na.count < 5){
+      
+      #Calculate the Majority value, between 0 and 1, disregarding NA's
+      sum.stop<-sum(stops.route.i[,j],na.rm=TRUE)
+      not.na<-length((is.na(stops.route.i[,j])[is.na(stops.route.i[,j])==FALSE]))
+      maj<-sum.stop/not.na
+      
+      #Apply logic of Majority based on center value of 0.5
+      if(maj < 0.5){
+        stop.val.ij<-0
+      } else if (maj > 0.5){
+        stop.val.ij<-1
+        
+        #If finds a maj value of 0.5 (a tie) apply the focal to the inner 3
+      } else if (maj == 0.5){
+        sum.stop<-sum(stops.route.i[2:4,j],na.rm=TRUE)
+        not.na<-length((is.na(stops.route.i[2:4,j])[is.na(stops.route.i[2:4,j])==FALSE]))
+        new.maj<-sum.stop/not.na
+        if(new.maj < 0.5){
+          stop.val.ij<-0
+        } else if (new.maj > 0.5){
+          stop.val.ij<-1
+          
+          #If still no clear majority, use focal value
+        }  else if (new.maj == 0.5){
+          stop.val.ij<-stops.route.i[3,j]
+        }
+      } else {
+        print("No Majority? Error...")
+      }
+      }
+      #Create a vector for that RouteID value of all of the resulting stop values
+      if(j==4){
+        stop.row.route.i<-c(Route.i,yearfocal,stops$Aou[1],stop.val.ij)
+      } else{
+        stop.row.route.i<-c(stop.row.route.i,stop.val.ij)
+      }
+    }
+       
+    #Create a data.frame for all RouteID value of all of the resulting stop values
+    if(i==1){
+      stops.maj.output<-stop.row.route.i 
+    }else{
+      stops.maj.output<-rbind(stops.maj.output,stop.row.route.i)
+    } 
+    }
+  
+  #Assign to global variable
+  stops.maj.output<-as.data.frame(stops.maj.output)
+  names(stops.maj.output)<-names(stops)
+  
+  assign(paste(c("stops.output.", yearfocal), collapse=""), stops.maj.output, envir = .GlobalEnv)
+}
+
+################################################################################
+################################################################################
+
+MajorityFocal(stops,1999,2003,2001)
+write.csv(stops.output.2001, "WTSP.StopMajority.2001.csv", row.names = FALSE)
+
+MajorityFocal(stops,2004,2008,2006)
+write.csv(stops.output.2006, "WTSP.StopMajority.2006.csv", row.names = FALSE)
+
+MajorityFocal(stops,2009,2013,2011)
+write.csv(stops.output.2011, "WTSP.StopMajority.2011.csv", row.names = FALSE)
