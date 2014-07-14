@@ -25,7 +25,7 @@ library(ggplot2)
 # 3. Remove problematic symbols on data sheet
 # 4. Save data as .csv, placed in relevant directory/folder
 
-setwd("C:/Users/ahnelson/Desktop/WTSP Year")
+setwd("C:/Users/ahnelson/Desktop/WOTH Year")
 
 #Use "for" function to join the data into one data set:
 # Use state abbreviations to keep track of data
@@ -34,9 +34,9 @@ loadCSVs<-function(bsd.dir, var.name){
   files <- dir(bsd.dir)
   for ( i in 1:length(files)){
     fn <- files[i]
-    state <- substr(fn, 1, 2)
+    state.i <- substr(fn, 1, 2)
     df.i <- read.csv(file.path(bsd.dir, fn))
-    df.i$state <- state
+    df.i$state.i <- state.i
     if ( i == 1){
       df.out <- df.i
     } else {
@@ -44,7 +44,7 @@ loadCSVs<-function(bsd.dir, var.name){
     }
   }
   #Eliminate state variable
-  df.out$state<-NULL
+  df.out$state.i<-NULL
   #Check file for accuracy
   str(df.out)
   #Create base dataframe that all other sections will copy from:
@@ -54,69 +54,113 @@ loadCSVs<-function(bsd.dir, var.name){
 #Direct program to YOUR relevant directory/folder
 
 # Load in Stop by Stop data formatted correctly
-loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/StopbyStopData',"stops")
+loadCSVs('C:/Users/ahnelson/Desktop/WOTH Year/StopbyStopData',"stops")
+loadCSVs('C:/Users/ahnelson/Desktop/WOTH Year/RouteData',"routes")
 
-routes<-read.csv(file="Final_Routes.csv",header = TRUE,sep = ",")
+#routes<-read.csv(file="Final_Routes.csv",header = TRUE,sep = ",")
 
 str(routes)
+summary(routes)
 str(stops)
+summary(stops)
 
+#unique (unlist (lapply (stops, function (x) which (is.na (x)))))
 
 stops<-(stops[stops$Country== 840,])
+routes<-(routes[routes$Country== 840,])
+
+#Create unique RouteID variable
+stops$RouteID<-(stops$Country*100000)+(stops$State*1000)+stops$Route
+routes$RouteID<-(routes$Country*100000)+(routes$State*1000)+routes$Route
 
 stops$Country<-NULL
 stops$State<-NULL
 stops$Route<-NULL
-stops$StopTotal<-NULL
+str(stops)
+stops <- stops[c(53,seq(1,52))]
 
-#names(routes)[4]<-"Year"
 
 unique(routes$RouteID)
 Years<-c(1999:2013)
 
 setdiff(routes$RouteID,stops[stops$Year==Years[1],]$RouteID)
+setdiff(routes[routes$Year==Years[1],]$RouteID,stops[stops$Year==Years[1],]$RouteID)
+
+#Only include routes in final route list
+stops<-stops[stops$RouteID %in% final_routes$RouteID,]
 
 #Add 0,0,0,0,0 rows to Bird Data
 for(i in 1:length(Years)){
   Year.i<-Years[i]
   Aou.i<-stops$Aou[1]
-  routematch<-setdiff(routes$RouteID,stops[stops$Year==Years[i],]$RouteID)
+  routematch<-setdiff(routes[routes$Year==Years[i],]$RouteID,stops[stops$Year==Years[i],]$RouteID)
   
   for(j in 1:length(routematch)){
     stops<-rbind(stops,c(routematch[j],Year.i,Aou.i,(rep(0,times=50))))
   }
 }
 
+
+setwd("C:/Users/ahnelson/Desktop/WTSP Year")
+final_routes<-read.csv(file="Final_Routes.csv",header = TRUE,sep = ",")
+
+#Add NA rows based on Final Route to Bird Data
+for(i in 1:length(Years)){
+  Year.i<-Years[i]
+  Aou.i<-stops$Aou[1]
+  routematch<-setdiff(final_routes$RouteID,stops[stops$Year==Years[i],]$RouteID)
+  
+  for(j in 1:length(routematch)){
+    stops<-rbind(stops,c(routematch[j],Year.i,Aou.i,(rep(NA,times=50))))
+  }
+}
+
+#Only include routes in final route list
+stops<-stops[stops$RouteID %in% final_routes$RouteID,]
+
 tail(stops)
 unique(stops$RouteID)
+unique(final_routes$RouteID)
+
 unique(routes$RouteID)
 
 str(stops)
+summary(stops)
 
-#Only include routes in final route list
-stops.i<-stops[stops$RouteID %in% routes$RouteID,]
+#Save to stops.i
+stops.i<-stops
+
 
 unique(stops.i$RouteID)
 unique(routes$RouteID)
+unique(final_routes$RouteID)
 
 # Change observed values to 0 or 1
 for(i in 4:ncol(stops.i)){
   for(j in 1:nrow(stops.i)){
     sample.ij<-stops.i[j,i]
-    if(sample.ij==0){
-      stops.i[j,i]<-0
-    } else if(sample.ij>0){
-      stops.i[j,i]<-1 
-    } else {
-      print("Huh?")
+    if(is.na(sample.ij)==TRUE){
+      stops.i[j,i]<-NA
+      
+    } else{
+      if(sample.ij==0){
+        stops.i[j,i]<-0
+      } else if(sample.ij>0){
+        stops.i[j,i]<-1 
+      } else {
+        print("Huh?")
+      }
     }
   }
 }
 
 summary(stops.i)
 
+
 #Check whether the route was run in the year and in that period
+setwd("C:/Users/ahnelson/Desktop/WTSP Year")
 routes_year<-read.csv(file="RouteYear.csv",header = TRUE,sep = ",")
+
 str(routes_year)
 
 
@@ -132,8 +176,13 @@ routes_year_3<-data.frame(RouteID=routes_year$RouteID,Year2009=routes_year$Year2
                           Year2011=routes_year$Year2011,Year2012=routes_year$Year2012,Year2013=routes_year$Year2013,
                           Run3=routes_year$Run3)
 
+str(routes_year_1)
 
 #Apply NA's to routes that don't fit the criteria
+
+  # CHECK EFFECTS OF NA'S AS INPUTS INTO THE LOOPS
+
+
 YearWrite<-function(stops.i,routes_year,Year.i,year_pos){
   stops.year.i<-stops.i[stops.i$Year==Year.i,]
   routes.i<-unique(stops.year.i$RouteID)
@@ -160,8 +209,11 @@ YearWrite<-function(stops.i,routes_year,Year.i,year_pos){
   
   print(as.character(paste(c("Writing", Year.i,"file"), collapse=" ")))
   
-  write.csv(df.out, paste(c("WTSP_StopComplete_", Year.i,".csv"), collapse=""), row.names = FALSE)
+  write.csv(df.out, paste(c("WOTH_StopComplete_", Year.i,".csv"), collapse=""), row.names = FALSE)
 }
+
+setwd("C:/Users/ahnelson/Desktop/WOTH Year")
+
 
 YearWrite(stops.i,routes_year_1,1999,1)
 YearWrite(stops.i,routes_year_1,2000,2)
@@ -181,15 +233,15 @@ YearWrite(stops.i,routes_year_3,2011,3)
 YearWrite(stops.i,routes_year_3,2012,4)
 YearWrite(stops.i,routes_year_3,2013,5)
 
-write.csv(stops[stops$Year==Year.i,], paste(c("WTSP_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
+#write.csv(stops[stops$Year==Year.i,], paste(c("WOTH_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
 
-setwd("C:/Users/ahnelson/Desktop/WTSP Year")
-write.csv(stops, "WTSP_stopsEDIT_Null.csv", row.names = FALSE)
+# setwd("C:/Users/ahnelson/Desktop/WOTH Year")
+# write.csv(stops, "WOTH_stopsEDIT_Null.csv", row.names = FALSE)
 
 
 # for(i in 1:length(unique(stops$Year))){
 #   Year.i<-unique(stops$Year)[i]
-#   write.csv(stops[stops$Year==Year.i,], paste(c("WTSP_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
+#   write.csv(stops[stops$Year==Year.i,], paste(c("WOTH_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
 # }
 
 
@@ -200,7 +252,7 @@ write.csv(stops, "WTSP_stopsEDIT_Null.csv", row.names = FALSE)
 # Apply majority and focal-based logic to deciding resulting value
 
 
-setwd("C:/Users/ahnelson/Desktop/WTSP_StopComplete")
+setwd("C:/Users/ahnelson/Desktop/WOTH_StopComplete")
 
 #Use "for" function to join the data into one data set:
 # Use state abbreviations to keep track of data
@@ -227,7 +279,7 @@ loadCSVs<-function(bsd.dir, var.name){
 }
 
 #Direct program to YOUR relevant directory/folder
-loadCSVs('C:/Users/ahnelson/Desktop/WTSP_StopComplete',"stops")
+loadCSVs('C:/Users/ahnelson/Desktop/WOTH_StopComplete',"stops")
 
 str(stops)
 summary(stops)
@@ -281,7 +333,20 @@ MajorityFocal<-function(stops,yearstart,yearstop,yearfocal){
           }  else if (new.maj == 0.5){
             stop.val.ij<-stops.route.i[3,j]
           }
-        } else {
+        
+          #Check for NA's as the returned value:
+          if(is.na(stop.val.ij)==TRUE){
+            rand<-runif(1,0,1)
+            if(rand<0.5){
+              stop.val.ij<-0
+            } else if (rand>=0.5){
+              stop.val.ij<-1
+            } else {
+              print("PROBLEMS!!!")
+            }
+            }
+          
+          } else {
           print("No Majority? Error...")
         }
       }
@@ -301,7 +366,7 @@ MajorityFocal<-function(stops,yearstart,yearstop,yearfocal){
     } 
   }
   
-  nam_vec<-seq(1,nrow(stops.output.2001))
+  nam_vec<-seq(1,nrow(stops.maj.output))
   rownames(stops.maj.output) <- nam_vec
   
   #Assign to global variable
@@ -316,17 +381,13 @@ MajorityFocal<-function(stops,yearstart,yearstop,yearfocal){
 
 MajorityFocal(stops,1999,2003,2001)
 summary(stops.output.2001)
-write.csv(stops.output.2001, "WTSP.StopMajority.2001.csv", row.names = FALSE)
+write.csv(stops.output.2001, "WOTH.StopMajority.2001.csv", row.names = FALSE)
 
 MajorityFocal(stops,2004,2008,2006)
-write.csv(stops.output.2006, "WTSP.StopMajority.2006.csv", row.names = FALSE)
+write.csv(stops.output.2006, "WOTH.StopMajority.2006.csv", row.names = FALSE)
 
 MajorityFocal(stops,2009,2013,2011)
-write.csv(stops.output.2011, "WTSP.StopMajority.2011.csv", row.names = FALSE)
-
-
-
-
+write.csv(stops.output.2011, "WOTH.StopMajority.2011.csv", row.names = FALSE)
 
 
 
@@ -599,7 +660,7 @@ sum(MNS.1$SpeciesTotal)
 
 
 #Is Data clean of NA's?  YES!!!!! 
-sum(is.na(MNS.2[,6:55])==TRUE)
+sum(is.na(stops[,6:55])==TRUE)
 names(MNS.2)
 #####################################################
 #### Clean up Route Data -----------------------------
