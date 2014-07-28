@@ -25,7 +25,7 @@ library(ggplot2)
 # 3. Remove problematic symbols on data sheet
 # 4. Save data as .csv, placed in relevant directory/folder
 
-setwd("C:/Users/ahnelson/Desktop/WTSP Year")
+setwd("C:/Users/ahnelson/Desktop/SASP Year")
 
 #Use "for" function to join the data into one data set:
 # Use state abbreviations to keep track of data
@@ -54,8 +54,8 @@ loadCSVs<-function(bsd.dir, var.name){
 #Direct program to YOUR relevant directory/folder
 
 # Load in Stop by Stop data formatted correctly
-loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/StopbyStopData',"stops")
-loadCSVs('C:/Users/ahnelson/Desktop/WTSP Year/RouteData',"routes")
+loadCSVs('C:/Users/ahnelson/Desktop/SASP Year/StopbyStopData',"stops")
+loadCSVs('C:/Users/ahnelson/Desktop/SASP Year/RouteData',"routes")
 
 #routes<-read.csv(file="Final_Routes.csv",header = TRUE,sep = ",")
 
@@ -70,14 +70,14 @@ stops<-(stops[stops$Country== 840,])
 routes<-(routes[routes$Country== 840,])
 
 #Create unique RouteID variable
-#stops$RouteID<-(stops$Country*100000)+(stops$State*1000)+stops$Route
-#routes$RouteID<-(routes$Country*100000)+(routes$State*1000)+routes$Route
+stops$RouteID<-(stops$Country*100000)+(stops$State*1000)+stops$Route
+routes$RouteID<-(routes$Country*100000)+(routes$State*1000)+routes$Route
 
 stops$Country<-NULL
 stops$State<-NULL
 stops$Route<-NULL
 str(stops)
-#stops <- stops[c(53,seq(1,52))]
+stops <- stops[c(53,seq(1,52))]
 
 
 unique(routes$RouteID)
@@ -209,10 +209,10 @@ YearWrite<-function(stops.i,routes_year,Year.i,year_pos){
   
   print(as.character(paste(c("Writing", Year.i,"file"), collapse=" ")))
   
-  write.csv(df.out, paste(c("WTSP_StopComplete_", Year.i,".csv"), collapse=""), row.names = FALSE)
+  write.csv(df.out, paste(c("SASP_StopComplete_", Year.i,".csv"), collapse=""), row.names = FALSE)
 }
 
-setwd("C:/Users/ahnelson/Desktop/WTSP Year")
+setwd("C:/Users/ahnelson/Desktop/SASP Year")
 
 
 YearWrite(stops.i,routes_year_1,1999,1)
@@ -233,15 +233,15 @@ YearWrite(stops.i,routes_year_3,2011,3)
 YearWrite(stops.i,routes_year_3,2012,4)
 YearWrite(stops.i,routes_year_3,2013,5)
 
-#write.csv(stops[stops$Year==Year.i,], paste(c("WTSP_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
+#write.csv(stops[stops$Year==Year.i,], paste(c("SASP_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
 
-# setwd("C:/Users/ahnelson/Desktop/WTSP Year")
-# write.csv(stops, "WTSP_stopsEDIT_Null.csv", row.names = FALSE)
+# setwd("C:/Users/ahnelson/Desktop/SASP Year")
+# write.csv(stops, "SASP_stopsEDIT_Null.csv", row.names = FALSE)
 
 
 # for(i in 1:length(unique(stops$Year))){
 #   Year.i<-unique(stops$Year)[i]
-#   write.csv(stops[stops$Year==Year.i,], paste(c("WTSP_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
+#   write.csv(stops[stops$Year==Year.i,], paste(c("SASP_AllStops", Year.i,".csv"), collapse=""), row.names = FALSE)
 # }
 
 
@@ -252,7 +252,7 @@ YearWrite(stops.i,routes_year_3,2013,5)
 # Apply majority and focal-based logic to deciding resulting value
 
 
-setwd("C:/Users/ahnelson/Desktop/WTSP_StopComplete")
+setwd("C:/Users/ahnelson/Desktop/SASP_StopComplete")
 
 #Use "for" function to join the data into one data set:
 # Use state abbreviations to keep track of data
@@ -279,7 +279,7 @@ loadCSVs<-function(bsd.dir, var.name){
 }
 
 #Direct program to YOUR relevant directory/folder
-loadCSVs('C:/Users/ahnelson/Desktop/WTSP_StopComplete',"stops")
+loadCSVs('C:/Users/ahnelson/Desktop/SASP_StopComplete',"stops")
 
 str(stops)
 summary(stops)
@@ -381,13 +381,13 @@ MajorityFocal<-function(stops,yearstart,yearstop,yearfocal){
 
 MajorityFocal(stops,1999,2003,2001)
 summary(stops.output.2001)
-write.csv(stops.output.2001, "WTSP.StopMajority.2001.csv", row.names = FALSE)
+write.csv(stops.output.2001, "SASP.StopMajority.2001.csv", row.names = FALSE)
 
 MajorityFocal(stops,2004,2008,2006)
-write.csv(stops.output.2006, "WTSP.StopMajority.2006.csv", row.names = FALSE)
+write.csv(stops.output.2006, "SASP.StopMajority.2006.csv", row.names = FALSE)
 
 MajorityFocal(stops,2009,2013,2011)
-write.csv(stops.output.2011, "WTSP.StopMajority.2011.csv", row.names = FALSE)
+write.csv(stops.output.2011, "SASP.StopMajority.2011.csv", row.names = FALSE)
 
 
 
